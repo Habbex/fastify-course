@@ -1,15 +1,13 @@
-const fastify = require('fastify')({logger: true});
+const { build } = require("./app");
 
-// Delcare a route
-fastify.get('/', (request, reply) => {
-  return { hello: 'world' };
-});
+const app = build({ logger: true });
+
 
 // Run the server!
-fastify.listen(3000, (err, address) => {
+app.listen(3000, (err, address) => {
   if (err) {
-    fastify.log.error(err);
+    app.log.error(err);
     process.exit(1);
   }
-  fastify.log.info(`server listening on ${address}`);
+  app.log.info(`server listening on ${address}`);
 });
