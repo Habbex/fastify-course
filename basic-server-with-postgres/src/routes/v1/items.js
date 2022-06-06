@@ -14,7 +14,7 @@ const getItemsOpts = {
     response: {
       200: {
         type: "array",
-        items: { Item },
+        items:  Item ,
       },
     },
   },

@@ -1,5 +1,3 @@
-let items = require("../../Items");
-
 const Item = {
   type: "object",
   properties: {
@@ -14,7 +12,7 @@ const getItemsOpts = {
     response: {
       200: {
         type: "array",
-        items: { Item },
+        items: Item,
       },
     },
   },
@@ -30,13 +28,13 @@ const getItemOpts = {
 
 const postItemOpts = {
   schema: {
-    body:{
+    body: {
       type: "object",
       required: ["name", "description"],
       properties: {
         name: { type: "string" },
         description: { type: "string" },
-      }
+      },
     },
     response: {
       201: Item,
@@ -52,20 +50,20 @@ const deleteItemOpts = {
         properties: {
           message: { type: "string" },
         },
-      },  
+      },
     },
   },
 };
 
 const updateItemOpts = {
   schema: {
-    body:{
+    body: {
       type: "object",
       required: ["name", "description"],
       properties: {
         name: { type: "string" },
         description: { type: "string" },
-      }
+      },
     },
     response: {
       200: Item,
@@ -73,43 +71,82 @@ const updateItemOpts = {
   },
 };
 
-
-const itemRoutes_v2 = (fastify, options, done) => {
-  fastify.get("/", getItemsOpts, (request, reply) => {
-    reply.send(items);
+const itemRoutes_v2 = async (fastify, options, done) => {
+  fastify.get("/", async (req, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { rows } = await client.query("SELECT * FROM items");
+      // Note: avoid doing expensive computation here, this will block releasing the client
+      reply.send(rows);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      // Release the client immediately after query resolves, or upon error
+      client.release();
+    }
   });
 
-  fastify.get("/:id", getItemOpts, (request, reply) => {
-    const { id } = request.params;
-    const item = items.find((item) => item.id === id);
-    reply.send(item);
+  fastify.get("/:id", getItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { id } = request.params;
+      const { rows } = await fastify.pg.query(
+        "SELECT * FROM items WHERE id=$1",
+        [id]
+      );
+      reply.send(rows[0]);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
   });
 
-  fastify.post("/", postItemOpts, (request, reply) => {
-    const { name, description } = request.body;
-    fastify.pg.query('INSERT INTO items (name, description) VALUES ($1, $2) RETURNING *', [name, description],
-     (err, result) => {
-        if (err){
-            return reply.code(500).send(err);
-        } 
-        reply.code(201).send({ id: result.rows[0].id, name, description });
-    })
+  fastify.post("/", postItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { name, description } = request.body;
+      const { rows } = await fastify.pg.query(
+        "INSERT INTO items (name, description) VALUES ($1, $2) RETURNING *",
+        [name, description]
+      );
+      reply.code(201).send(rows[0]);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
   });
 
-  fastify.delete("/:id", deleteItemOpts, (request, reply) => {
-    const {id} = request.params;
-    items= items.filter((item) => item.id !== id);
-    reply.send(`Item ${id} deleted`);
+  fastify.delete("/:id", deleteItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { id } = request.params;
+      await fastify.pg.query("DELETE FROM items WHERE id=$1", [id]);
+      reply.send(`Item ${id} deleted`);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
   });
 
-  fastify.put("/:id", updateItemOpts, (request, reply)=>{
-    const {id}= request.params
-    const {name, description}= request.body
-    const item = items.find((item)=> item.id === id)
-    item.name = name
-    item.description = description
-    reply.send(item)
-  })
+  fastify.put("/:id", updateItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { id } = request.params;
+      const { name, description } = request.body;
+      const { rows } = await fastify.pg.query(
+        "UPDATE items SET name=$1, description=$2 WHERE id=$3 RETURNING *",
+        [name, description, id]
+      );
+      reply.send(rows[0]);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
+  });
 
   done();
 };

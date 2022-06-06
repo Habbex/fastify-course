@@ -25,10 +25,12 @@ Content-Type: application/json
   "description": "New Item Description"
 }
 
-
+### v2 API
 ### GET ALL ITEMS
-GET http://127.0.0.1:3000/time HTTP/1.1 
+GET http://127.0.0.1:3000/v2/ HTTP/1.1
 
+### GET SINGLE ITEMS
+GET http://127.0.0.1:3000/v2/2 HTTP/1.1 
 
 ### ADD ITEM
 POST http://localhost:3000/v2 HTTP/1.1
@@ -38,3 +40,16 @@ Content-Type: application/json
   "name": "New Item",
   "description": "New Item Description"
 }
+
+### DELETE SINGLE ITEMS
+DELETE  http://127.0.0.1:3000/v2/13 HTTP/1.1 
+
+### UPDATE ITEM
+PUT http://localhost:3000/v2/4 HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Updated Item 3",
+  "description": "Updated Item Description 3"
+}
+

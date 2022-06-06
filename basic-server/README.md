@@ -415,7 +415,7 @@ response: {
 
 type: "array",
 
-items: { Item },
+items:  Item ,
 
 },
 

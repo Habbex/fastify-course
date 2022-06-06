@@ -20,6 +20,8 @@
   "homepage": "https://github.com/Habbex/fastify-course#readme",
   "dependencies": {
     "@fastify/postgres": "^4.0.1",
+    "dotenv": "^16.0.1",
+    "envalid": "^7.3.1",
     "fastify": "^3.29.0",
     "fastify-swagger": "^5.2.0",
     "pg": "^8.7.3"
