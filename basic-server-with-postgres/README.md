@@ -458,12 +458,5 @@ Fastify comes with built-in support for fake HTTP injection thanks to light-my-r
 
 So `.inject` ensures all registered plugins have booted up and our application is ready to test. Finally, we pass the request method we want to use and a route. Using await we can store the response without a callback.
 
-
-
-## Docker and dockerize our application.
-
-
-
-
 ## Celebrate your achievement 🥳 
 And there you have it a fully operational CRUD web-application with fastify communicating with a postgres database 🥳🙌🎉 
