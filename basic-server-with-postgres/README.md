@@ -280,7 +280,7 @@ DELETE  http://127.0.0.1:3000/v2/1 HTTP/1.1
 ```
 
 ### SQL injections
-Worth mentioning that you could avoid using string interpolation (with backtick's) when creating our queries , as the example below :
+Worth mentioning that you could avoid using string interpolation (with backtick's ``) when creating our queries , as the example below :
 `SELECT * items WHERE id=${id}`
 
 ```
@@ -319,6 +319,148 @@ We should always pass in values as parameters to the query, such as we have done
       );
 ```
 
+
+## Integration test with JEST
+1. First we download and install the testing framework *JEST* with `npm i jest --save`.
+
+2. Then we create a new folder next to `src` folder , and we call it `__int_tests__` which is `__int + __test__` based on how *Jest* looks for test files. 
+
+3. Inside the folder we create a new javaScript file called `setupTestEnv.js`, which we'll setup a test setup of our environment:
+```
+const { build } = require("../src/app");
+const env = require("../src/config/env");
+
+const clearDatabaseSQL = "DELETE FROM items";
+const createTableSQL = "CREATE TABLE IF NOT EXISTS Items (id SERIAL, name VARCHAR(200),description VARCHAR(500), PRIMARY KEY(id));"
+const insertFakeItemSQL = 'INSERT INTO items (name, description) VALUES ($1, $2)';
+
+module.exports = function setupTestEnv() {
+  const app = build(
+    {
+      logger: true,
+    },
+    {},
+    {
+      connectionString: env.POSTGRES_TEMP_DB_CONNECTION_STRING,
+    }
+  );
+
+  beforeAll(async () => {
+    await app.ready();
+    await app.pg.query(createTableSQL);
+    await app.pg.query(clearDatabaseSQL);
+  });
+
+  beforeEach(async () => {
+    await app.pg.query(insertFakeItemSQL, ["Test Item", "This is a test item"]);
+  });
+
+  afterEach(async () => {
+    await app.pg.query(clearDatabaseSQL);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  return app;
+};
+``` 
+Remember in the beginning when we decided to modularize our application , it's to easily use the same build function when running our integration test. 
+
+4. We'll update our `config/env.js` file and give it a new environment variable of a postgres DB connection string pointing to a temp database which we'll create by running : 
+`Create DATABASE postgres_temp`.
+
+5. The temp database will serve as our test database which we will test all our CRUD endpoints towards. 
+
+6. Often while writing tests you have some setup work that needs to happen before tests run, and you have some finishing work that needs to happen after tests run like `beforeEach` or `afterEach` hooks. 
+
+Some test we only need to do the setup once like for `beforeAll` or `AfterAll` hooks. 
+
+- For us we'll create a test table `beforeAll` test, and we clear the table just to be sure. 
+- `beforeEach` test we'll insert a fake entry of an item which we can use in our integration tests. 
+
+- `afterEach` test we'll create the test table.
+
+- `afterAll` After all the test's are done , we teardown the setup by calling `await app.close();`
+
+7. Now we'll move on to create our integration test by creating a new javaScript and call it `items.test.js`:
+```
+const setupTestEnv = require("./setupTestEnv");
+
+const app = setupTestEnv();
+
+test('should create an item via POST route', async () => {
+    const item = {
+        name: "Test Item",
+        description: "This is a test item",
+    };
+    
+    const response = await app.inject({
+        method: "POST",
+        url: "/v2/",
+        payload: item,
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject(item);
+});
+
+test('should retrieve created items via GET route', async () => {
+    const item = {
+        name: "Test Item",
+        description: "This is a test item",
+    };
+    const response = await app.inject({
+        method: "GET",
+        url: "/v2/",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject([item]);
+});
+
+test('should update an item', async () => {
+    const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
+    expect(rows.length).toBe(1)
+    const item = rows[0];
+
+    const updatedItem = {
+        name: "Updated Item",
+        description: "This is an updated item",
+    };
+
+    const updatedResponse = await app.inject({
+        method: "PUT",
+        url: "/v2/" + item.id,
+        payload: updatedItem,
+    });
+
+    expect(updatedResponse.statusCode).toBe(200);
+    expect(updatedResponse.json()).toMatchObject(updatedItem);
+});
+
+test('should delete an item', async () => {
+    const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
+    expect(rows.length).toBe(1)
+    const item = rows[0];
+
+    const deleteResponse = await app.inject({
+        method: "DELETE",
+        url: "/v2/" + item.id,
+    });
+
+    expect(deleteResponse.statusCode).toBe(200);
+});
+``` 
+
+Fastify comes with built-in support for fake HTTP injection thanks to light-my-request(another npm module). Which basically give you a minimally running application without the need to do `app.listen` like for example in *Express*, which we use to inject and call our predefined routes. 
+
+So `.inject` ensures all registered plugins have booted up and our application is ready to test. Finally, we pass the request method we want to use and a route. Using await we can store the response without a callback.
+
+
+
+## Docker and dockerize our application.
 
 
 
