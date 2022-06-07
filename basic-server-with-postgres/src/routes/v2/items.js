@@ -1,10 +1,13 @@
+const vatCalculator = require("../../utlis/vatCalculator");
+
 const Item = {
   type: "object",
   properties: {
     id: { type: "string" },
     name: { type: "string" },
     description: { type: "string" },
-  },
+    gross_amount: { type: "number" }
+  }
 };
 
 const getItemsOpts = {
@@ -30,10 +33,11 @@ const postItemOpts = {
   schema: {
     body: {
       type: "object",
-      required: ["name", "description"],
+      required: ["name", "description", "gross_amount"],
       properties: {
         name: { type: "string" },
         description: { type: "string" },
+        gross_amount: { type: "number" },
       },
     },
     response: {
@@ -59,10 +63,11 @@ const updateItemOpts = {
   schema: {
     body: {
       type: "object",
-      required: ["name", "description"],
+      required: ["name", "description", "gross_amount"],
       properties: {
         name: { type: "string" },
         description: { type: "string" },
+        gross_amount: { type: "number" },
       },
     },
     response: {
@@ -72,7 +77,7 @@ const updateItemOpts = {
 };
 
 const itemRoutes_v2 = async (fastify, options, done) => {
-  fastify.get("/", async (req, reply) => {
+  fastify.get("/", getItemsOpts, async (req, reply) => {
     const client = await fastify.pg.connect();
     try {
       const { rows } = await client.query("SELECT * FROM items");
@@ -105,10 +110,12 @@ const itemRoutes_v2 = async (fastify, options, done) => {
   fastify.post("/", postItemOpts, async (request, reply) => {
     const client = await fastify.pg.connect();
     try {
-      const { name, description } = request.body;
+      const { name, description, gross_amount } = request.body;
+      const netAmount=  vatCalculator.calculateNetAmount(gross_amount);
+      const vatAmount = vatCalculator.calculateVAT(netAmount);
       const { rows } = await fastify.pg.query(
-        "INSERT INTO items (name, description) VALUES ($1, $2) RETURNING *",
-        [name, description]
+        "INSERT INTO items (name, description, gross_amount , net_amount , excluded_vat_amount) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [name, description, gross_amount, netAmount, vatAmount]
       );
       reply.code(201).send(rows[0]);
     } catch (err) {
@@ -135,10 +142,12 @@ const itemRoutes_v2 = async (fastify, options, done) => {
     const client = await fastify.pg.connect();
     try {
       const { id } = request.params;
-      const { name, description } = request.body;
+      const { name, description, gross_amount } = request.body;
+      const netAmount=  vatCalculator.calculateNetAmount(gross_amount);
+      const vatAmount = vatCalculator.calculateVAT(netAmount);
       const { rows } = await fastify.pg.query(
-        "UPDATE items SET name=$1, description=$2 WHERE id=$3 RETURNING *",
-        [name, description, id]
+        "UPDATE items SET name=$1, description=$2, gross_amount=$3, net_amount=$4, excluded_vat_amount=$5 WHERE id=$6 RETURNING *",
+        [name, description, gross_amount, netAmount, vatAmount, id]
       );
       reply.send(rows[0]);
     } catch (err) {

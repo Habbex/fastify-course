@@ -318,21 +318,181 @@ We should always pass in values as parameters to the query, such as we have done
         [name, description, id]
       );
 ```
+## Unit test with JEST
+1. First we download and install the testing framework *JEST* with `npm i jest --save`.
+
+2. Update the `package.json` file and add to new npm script commands:
+- `"test": "jest --coverage --runInBand",` Which can be called with `npm run test`
+- `"test:watch": "jest --watch",` Which can be call with `npm run test:watch`, and will run JEST in watch mode and always rerunning the tests while you are creating them. 
+
+3. Let's work in TDD mode where we first develop the test then the actual implementation, so we create a new folder called `__test__` and inside it we create a new file called `vatCalculator.test.js`:
+```
+const vatCalculator = require('../src/utlis/vatCalculator');
+
+describe("VAT calculator", ()=>{
+
+    test("Should return the correct VAT excluded amount for 20% VAT", () => {
+        // arrange and act
+        const result = vatCalculator.calculateVAT(16.67)
+        // assert
+        expect(result).toBe(3.33);
+    });
+
+    test("Should return the correct gross amount for 20% VAT", () => {
+        // arrange and act
+        const result = vatCalculator.calculateGrossAmount(16.67)
+        // assert
+        expect(result).toBe(20.00);
+    });
+
+    test("Should return the correct net amount for 20% VAT", () => {
+        // arrange and act
+        const result = vatCalculator.calculateNetAmount(20.00)
+        // assert
+        expect(result).toBe(16.67);
+    });
+})
+```
+
+4. Well be creating a utlis functionality which will calculate the VAT of an *gross Amount* , so we can store in database the *net Amount* and *excluded VAT amount* of a VAT 20%. We create a new folder called `utlis` and inside it a file called `vatCalculator.js`
+```
+const vatCalculator = {
+    calculateVAT: (netAmount) => {
+        return Math.round((netAmount * 0.20) * 1e2) / 1e2;
+    },
+    calculateGrossAmount: (netAmount) => {
+        return Math.round((netAmount * 1.20)* 1e2) / 1e2;
+    },
+    calculateNetAmount: (grossAmount) => {
+        return Math.round((grossAmount / 1.20)* 1e2) / 1e2;
+    }
+}
+
+module.exports = vatCalculator;
+```
+
+5. Let's alter the table in order to add 3 new columns (gross_amount, net_amount, excluded_vat_amount):
+```
+ALTER TABLE items
+ADD gross_amount NUMERIC,
+ADD net_amount NUMERIC,
+ADD excluded_vat_amount NUMERIC 
+``` 
+
+6. Since we have updated the table we also need to update the schema in our `routes/v2/items.js.
+
+### Item schema
+```
+const Item = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    name: { type: "string" },
+    description: { type: "string" },
+    gross_amount: { type: "number" }
+  }
+};
+```
+
+### Post Item schema
+```
+const postItemOpts = {
+  schema: {
+    body: {
+      type: "object",
+      required: ["name", "description", "gross_amount"],
+      properties: {
+        name: { type: "string" },
+        description: { type: "string" },
+        gross_amount: { type: "number" },
+      },
+    },
+    response: {
+      201: Item,
+    },
+  },
+};
+```
+
+### Update Item schema
+```
+const updateItemOpts = {
+  schema: {
+    body: {
+      type: "object",
+      required: ["name", "description", "gross_amount"],
+      properties: {
+        name: { type: "string" },
+        description: { type: "string" },
+        gross_amount: { type: "number" },
+      },
+    },
+    response: {
+      200: Item,
+    },
+  },
+};
+```
+
+7. We update our POST and PUT routes to use the *VATCalculator*  after have imported it `const vatCalculator = require("../../utlis/vatCalculator");`
+
+### POST route
+```
+  fastify.post("/", postItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { name, description, gross_amount } = request.body;
+      const netAmount=  vatCalculator.calculateNetAmount(gross_amount);
+      const vatAmount = vatCalculator.calculateVAT(netAmount);
+      const { rows } = await fastify.pg.query(
+        "INSERT INTO items (name, description, gross_amount , net_amount , excluded_vat_amount) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [name, description, gross_amount, netAmount, vatAmount]
+      );
+      reply.code(201).send(rows[0]);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
+  });
+```
+
+### PUT route
+```
+  fastify.put("/:id", updateItemOpts, async (request, reply) => {
+    const client = await fastify.pg.connect();
+    try {
+      const { id } = request.params;
+      const { name, description, gross_amount } = request.body;
+      const netAmount=  vatCalculator.calculateNetAmount(gross_amount);
+      const vatAmount = vatCalculator.calculateVAT(netAmount);
+      const { rows } = await fastify.pg.query(
+        "UPDATE items SET name=$1, description=$2, gross_amount=$3, net_amount=$4, excluded_vat_amount=$5 WHERE id=$6 RETURNING *",
+        [name, description, gross_amount, netAmount, vatAmount, id]
+      );
+      reply.send(rows[0]);
+    } catch (err) {
+      reply.send(err);
+    } finally {
+      client.release();
+    }
+  });
+```
 
 
 ## Integration test with JEST
-1. First we download and install the testing framework *JEST* with `npm i jest --save`.
+1. Then we create a new folder next to `src` folder , and we call it `__int_tests__` which is `__int + __test__` based on how *Jest* looks for test files. 
 
-2. Then we create a new folder next to `src` folder , and we call it `__int_tests__` which is `__int + __test__` based on how *Jest* looks for test files. 
-
-3. Inside the folder we create a new javaScript file called `setupTestEnv.js`, which we'll setup a test setup of our environment:
+2. Inside the folder we create a new javaScript file called `setupTestEnv.js`, which we'll setup a test setup of our environment:
 ```
 const { build } = require("../src/app");
 const env = require("../src/config/env");
 
 const clearDatabaseSQL = "DELETE FROM items";
-const createTableSQL = "CREATE TABLE IF NOT EXISTS Items (id SERIAL, name VARCHAR(200),description VARCHAR(500), PRIMARY KEY(id));"
-const insertFakeItemSQL = 'INSERT INTO items (name, description) VALUES ($1, $2)';
+const createTableSQL =
+  "CREATE TABLE IF NOT EXISTS Items (id SERIAL, name VARCHAR(200),description VARCHAR(500), gross_amount NUMERIC , net_amount NUMERIC , excluded_vat_amount NUMERIC, PRIMARY KEY(id));";
+const insertFakeItemSQL =
+  "INSERT INTO items (name, description, gross_amount , net_amount , excluded_vat_amount) VALUES ($1, $2, $3, $4, $5)";
 
 module.exports = function setupTestEnv() {
   const app = build(
@@ -352,7 +512,7 @@ module.exports = function setupTestEnv() {
   });
 
   beforeEach(async () => {
-    await app.pg.query(insertFakeItemSQL, ["Test Item", "This is a test item"]);
+    await app.pg.query(insertFakeItemSQL, ["Test Item", "This is a test item", 20, 16.67, 3.33]);
   });
 
   afterEach(async () => {
@@ -368,12 +528,12 @@ module.exports = function setupTestEnv() {
 ``` 
 Remember in the beginning when we decided to modularize our application , it's to easily use the same build function when running our integration test. 
 
-4. We'll update our `config/env.js` file and give it a new environment variable of a postgres DB connection string pointing to a temp database which we'll create by running : 
+3. We'll update our `config/env.js` file and give it a new environment variable of a postgres DB connection string pointing to a temp database which we'll create by running : 
 `Create DATABASE postgres_temp`.
 
-5. The temp database will serve as our test database which we will test all our CRUD endpoints towards. 
+4. The temp database will serve as our test database which we will test all our CRUD endpoints towards. 
 
-6. Often while writing tests you have some setup work that needs to happen before tests run, and you have some finishing work that needs to happen after tests run like `beforeEach` or `afterEach` hooks. 
+5. Often while writing tests you have some setup work that needs to happen before tests run, and you have some finishing work that needs to happen after tests run like `beforeEach` or `afterEach` hooks. 
 
 Some test we only need to do the setup once like for `beforeAll` or `AfterAll` hooks. 
 
@@ -384,73 +544,78 @@ Some test we only need to do the setup once like for `beforeAll` or `AfterAll` h
 
 - `afterAll` After all the test's are done , we teardown the setup by calling `await app.close();`
 
-7. Now we'll move on to create our integration test by creating a new javaScript and call it `items.test.js`:
+6. Now we'll move on to create our integration test by creating a new javaScript and call it `items.test.js`:
 ```
 const setupTestEnv = require("./setupTestEnv");
 
 const app = setupTestEnv();
 
-test('should create an item via POST route', async () => {
-    const item = {
-        name: "Test Item",
-        description: "This is a test item",
-    };
+describe("Intgretation test for CRUD endpoints connected to test db", () => {
+
+    test('should create an item via POST route', async () => {
+        const item = {
+            name: "Test Item",
+            description: "This is a test item",
+            gross_amount: 20,   
+        };
+        
+        const response = await app.inject({
+            method: "POST",
+            url: "/v2/",
+            payload: item,
+        });
+        
+        expect(response.statusCode).toBe(201);
+        expect(response.json()).toMatchObject(item);
+    });
     
-    const response = await app.inject({
-        method: "POST",
-        url: "/v2/",
-        payload: item,
+    test('should retrieve created items via GET route', async () => {
+        const item = {
+            name: "Test Item",
+            description: "This is a test item",
+        };
+        const response = await app.inject({
+            method: "GET",
+            url: "/v2/",
+        });
+    
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toMatchObject([item]);
     });
-
-    expect(response.statusCode).toBe(201);
-    expect(response.json()).toMatchObject(item);
-});
-
-test('should retrieve created items via GET route', async () => {
-    const item = {
-        name: "Test Item",
-        description: "This is a test item",
-    };
-    const response = await app.inject({
-        method: "GET",
-        url: "/v2/",
+    
+    test('should update an item', async () => {
+        const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
+        expect(rows.length).toBe(1)
+        const item = rows[0];
+    
+        const updatedItem = {
+            name: "Updated Item",
+            description: "This is an updated item",
+            gross_amount: 20,   
+        };
+    
+        const updatedResponse = await app.inject({
+            method: "PUT",
+            url: "/v2/" + item.id,
+            payload: updatedItem,
+        });
+    
+        expect(updatedResponse.statusCode).toBe(200);
+        expect(updatedResponse.json()).toMatchObject(updatedItem);
     });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject([item]);
-});
-
-test('should update an item', async () => {
-    const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
-    expect(rows.length).toBe(1)
-    const item = rows[0];
-
-    const updatedItem = {
-        name: "Updated Item",
-        description: "This is an updated item",
-    };
-
-    const updatedResponse = await app.inject({
-        method: "PUT",
-        url: "/v2/" + item.id,
-        payload: updatedItem,
+    
+    test('should delete an item', async () => {
+        const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
+        expect(rows.length).toBe(1)
+        const item = rows[0];
+    
+        const deleteResponse = await app.inject({
+            method: "DELETE",
+            url: "/v2/" + item.id,
+        });
+    
+        expect(deleteResponse.statusCode).toBe(200);
     });
-
-    expect(updatedResponse.statusCode).toBe(200);
-    expect(updatedResponse.json()).toMatchObject(updatedItem);
-});
-
-test('should delete an item', async () => {
-    const {rows} = await app.pg.query("SELECT * FROM items LIMIT 1");
-    expect(rows.length).toBe(1)
-    const item = rows[0];
-
-    const deleteResponse = await app.inject({
-        method: "DELETE",
-        url: "/v2/" + item.id,
-    });
-
-    expect(deleteResponse.statusCode).toBe(200);
 });
 ``` 
 

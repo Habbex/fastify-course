@@ -3,9 +3,9 @@ const env = require("../src/config/env");
 
 const clearDatabaseSQL = "DELETE FROM items";
 const createTableSQL =
-  "CREATE TABLE IF NOT EXISTS Items (id SERIAL, name VARCHAR(200),description VARCHAR(500), PRIMARY KEY(id));";
+  "CREATE TABLE IF NOT EXISTS Items (id SERIAL, name VARCHAR(200),description VARCHAR(500), gross_amount NUMERIC , net_amount NUMERIC , excluded_vat_amount NUMERIC, PRIMARY KEY(id));";
 const insertFakeItemSQL =
-  "INSERT INTO items (name, description) VALUES ($1, $2)";
+  "INSERT INTO items (name, description, gross_amount , net_amount , excluded_vat_amount) VALUES ($1, $2, $3, $4, $5)";
 
 module.exports = function setupTestEnv() {
   const app = build(
@@ -25,7 +25,7 @@ module.exports = function setupTestEnv() {
   });
 
   beforeEach(async () => {
-    await app.pg.query(insertFakeItemSQL, ["Test Item", "This is a test item"]);
+    await app.pg.query(insertFakeItemSQL, ["Test Item", "This is a test item", 20, 16.67, 3.33]);
   });
 
   afterEach(async () => {

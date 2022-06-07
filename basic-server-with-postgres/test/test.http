@@ -30,7 +30,7 @@ Content-Type: application/json
 GET http://127.0.0.1:3000/v2/ HTTP/1.1
 
 ### GET SINGLE ITEMS
-GET http://127.0.0.1:3000/v2/2 HTTP/1.1 
+GET http://127.0.0.1:3000/v2/9 HTTP/1.1 
 
 ### ADD ITEM
 POST http://localhost:3000/v2 HTTP/1.1
@@ -38,7 +38,8 @@ Content-Type: application/json
 
 {
   "name": "New Item",
-  "description": "New Item Description"
+  "description": "New Item Description",
+  "gross_amount": 20
 }
 
 ### DELETE SINGLE ITEMS
