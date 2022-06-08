@@ -617,3 +617,84 @@ Content-Type:  application/json
 ```
 ## Celebrate your achievement 🥳 
 And there you have it a fully operational CRUD web-application with fastify 🥳🙌🎉 
+
+## Dockerize the application 
+1. Inside the root of our porject file structure we'll create a new file called `Dockerfile`.
+
+2. Inside the `Dockerfile` we first define the base image which we want to build from, in this case we check what version of node we have installed `node --version` and use the same version `FROM node:14.16.0`
+
+3. Next we create a directory to hold the application code inside the image, this will be the working directory for your application:
+```
+# Create app directory
+WORKDIR /usr/src/app
+```
+
+4. The base image that we hare using comes with *Node.js* and *npm* preinstalled, so we can copy over both `package.json` and `package-lock.json` inside our image:
+```
+# Install app dependencies
+# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# where available (npm@5+)
+COPY package*.json ./
+```
+This in order to install all our depencides by supplying the command `RUN npm install`, just like we do in our terminal.
+
+If you are building your code for production :
+`RUN npm ci --only=production`
+
+5. Next we bundle our application source code inside the Docker image , by running the command : 
+```
+# Bundle app source
+COPY . .
+```
+
+6. Our application binds to the port 3000, so we'll use the `EXPOSE` instruction to have it mapped by the docker deamon:
+`EXPOSE 8080`
+
+7. Finally we define the command to run our application , by using the `CMD` which defines our runtime. We first take a look at our `package.json` file in order to know which command to pass, in our case it's : 
+`CMD ["node", "src/server.js"]`
+
+8. We create a `.dockerignore` file , which works just like .gitignore file. Tell docker to not copy over local modules and debug logs into the image:
+```
+node_modules
+npm-debug.log
+```
+
+9. Now in our terminal we'll tell Docker to build our image, by running the command:
+`docker build . -t <your username>/node-web-app`
+
+- `.` : Telling Docker cli on the current directory.
+- `-t` : Let's you tag the image so it's eaiser to find. 
+
+10. Run `docker iamges` to view your created image.
+
+11. It's time to run our create image as a container, by running the following command : 
+`docker run -p 8080:3000 -d <your username>/node-web-app`
+
+- `-p` : Port mapping which redirect a public port to a private private port. In this case we can use 8080 as public and 3000 as the private one based on our EXPOSE and what we have set inside our application `-p 8080:3000`
+
+- `-d` : Runs the container in detacted mode, allowing you to use the terminal for other tasks. Without it you will see the log of the application running just as we have seen when running it on our local environment. 
+
+12. To see our Docker container running we'll use `docker ps`, and we also copy the container id.
+
+13. We use the container id together with `docker logs <container id>` to view the log and app output. 
+
+14. We can go inside the container, by running : `docker exec -it <container id> /bin/bash`
+
+15. We'll call `docker logs <container id>` in order to see the output , and update our `test.http` file to call get all items. 
+
+We'll see that the request failed and we get a message of *socket hang up*, 
+
+The reason for this error is that *fastify* is setup by default to listen *only* on the localhost of `127.0.0.1` interface. 
+
+To listen on all available IPv4 interface , we need to modify our `fastify.listen` call like this :
+`app.listen(3000, '0.0.0.0', (err, address) => {`
+
+16. Let's rebuild our image in order to include our changes and test it out again : `docker build . -t habbex/node-web-app`. Notice it when much quicker, it's due to Docker is caching the diffirent step. 
+
+17. Let's run `docker ps` to see if you have any old container, and let's clear them out with `docker container prune`. 
+
+18. Let's run our application again : `docker run -p 8080:3000 -d <your username>/node-web-app`.  
+
+## Celebrate your achievement 🥳 
+And there you have it a you have dockerized your web-application 🥳🙌🎉 
+
