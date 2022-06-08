@@ -3,8 +3,6 @@
 
 This readme will explain how to update our current basic we-application to communicate with a Database, in this case postgres DB.
 
-## Setup Postgres and Adminer with Docker compose.
-
 
 ## Install pg and fastify-postgres plugin
 1. `npm i pg @fastify/postgres --save`
@@ -622,6 +620,206 @@ describe("Intgretation test for CRUD endpoints connected to test db", () => {
 Fastify comes with built-in support for fake HTTP injection thanks to light-my-request(another npm module). Which basically give you a minimally running application without the need to do `app.listen` like for example in *Express*, which we use to inject and call our predefined routes. 
 
 So `.inject` ensures all registered plugins have booted up and our application is ready to test. Finally, we pass the request method we want to use and a route. Using await we can store the response without a callback.
+
+
+## Setup Postgres and Adminer with Docker compose.
+1. We go to DockerHub.com and search for both postgres and adminer , in order to get and understand of the variables they need. 
+
+2. We construct our `docker-compose.yml` file as below :
+```
+version: '3.8'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+  adminer:
+    container_name: adminer
+    image: adminer:4.8.1
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${ADMINER_HOST_PORT:-8081}:8080'
+volumes:
+  pgdata:
+```
+
+3. We add presistant name volume : 
+```
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+----
+volumes:
+  pgdata:
+``` 
+So the data in the database is stored and not clear out on container shutdown.
+
+4. It's important to determine and fail fast then running our container , it's why it's important to add healthcheck to our containers which check if it's health and up and running and stops the workflow for others depneding on it such as *Adminer* : 
+```
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+```
+
+```
+    depends_on:
+      postgres:
+        condition: service_healthy
+```
+
+5. We can use the same environment varablies which we created before to pass in as variables for the container to use, we can also condition the variables by if they are empty/ not set we'll use an default value : 
+```
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+```
+
+Inside the .env (*Remember to never push this to the repo, since it could contain sensative information such as passwords*):
+```
+POSTGRES_DB_CONNECTION_STRING = "postgres://postgres:postgres@postgres:5432/postgres"
+POSTGRES_TEMP_DB_CONNECTION_STRING = "postgres://postgres:postgres@postgres:5432/postgres_temp"
+
+WEB_APP_HOST_PORT= "8080"
+ADMINER_HOST_PORT= "8081"
+
+POSTGRES_PASSWORD= "postgres"
+```
+
+
+
+6. Run your multi-contianer setup , by running the command : `docker-compose up`.
+
+
+
+## Setup your web-app in Docker-compose
+
+1. We'll split up our setup of our web-app into two services , one will install and setup the web-app and another will run the web-app:
+
+```
+services:
+  setup-web-app:
+    image: node:14.16.0
+    working_dir: /usr/src/web-app
+    entrypoint: [ 'npm', 'i' ]
+    volumes:
+      - ./docker-data/node_modules:/usr/src/web-app/node_modules
+      - ./package.json:/usr/src/web-app/package.json
+      - ./package-lock.json:/usr/src/web-app/package-lock.json
+
+  web-app:
+    container_name: web-app
+    image: node:14.16.0
+    working_dir: /usr/src/web-app
+    entrypoint: [ 'npm', 'run', 'start' ]
+    ports:
+      - '${WEB_APP_HOST_PORT:-8080}:8080'
+    volumes:
+      - ./docker-data/node_modules:/usr/src/web-app/node_modules
+      - ./package.json:/usr/src/web-app/package.json
+      - ./package-lock.json:/usr/src/web-app/package-lock.json
+      - .:/usr/src/web-app
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB_CONNECTION_STRING: '${POSTGRES_DB_CONNECTION_STRING}'
+      POSTGRES_TEMP_DB_CONNECTION_STRING: '${POSTGRES_TEMP_DB_CONNECTION_STRING}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+```
+
+2. We'll add a health check to our web-app , in order to ensure it's up and running and healthly. We create a new route file and call it `healthcheck.js` in our `routes` folder:
+```
+const healthcheck = (fastify, options, done) => {
+    fastify.get('/', (req, reply) => {
+        reply.send("I'm okay")   
+    })
+    done()
+}
+
+module.exports = {healthcheck}
+```
+
+Update the `app.js` file to register our route :
+```
+const fastify = require('fastify');
+const fastifySwagger= require('fastify-swagger');
+const fastifyPostgres= require('@fastify/postgres');
+const {itemRoutes_v1} = require('./routes/v1/items');
+const {itemRoutes_v2}= require('./routes/v2/items');
+const {healthcheck} = require('./routes/healthcheck');
+
+const build =(opts={}, optsSwagger={}, optsPostgres={})=>{
+    const app= fastify(opts);
+    app.register(fastifyPostgres, optsPostgres);
+    app.register(fastifySwagger, optsSwagger);
+    app.register(itemRoutes_v1, {prefix: '/v1'});
+    app.register(itemRoutes_v2, {prefix: '/v2'});
+    app.register(healthcheck, {prefix: '/healthcheck'});
+    return app;
+};
+
+module.exports={build};
+```
+
+3. We add the healthcheck section for our web-app in `docker-compse.yml`file:
+```
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '-qO',
+          '-',
+          'http://localhost:8080/healthcheck'
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+```
+
+
+4. Update the `env.js` file to be able to use the port specified in the `.env` file : 
+```
+require('dotenv').config();
+const envalid = require('envalid');
+
+module.exports= envalid.cleanEnv(process.env, {
+    POSTGRES_DB_CONNECTION_STRING: envalid.str({}),
+    POSTGRES_TEMP_DB_CONNECTION_STRING: envalid.str({}),
+    WEB_APP_HOST_PORT: envalid.num({ default: 8080 }),
+})
+```
+
+And update the `server.js` file :
+```
+app.listen(env.WEB_APP_HOST_PORT , '0.0.0.0', async (err, address) => {
+  if (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+  app.log.info(`server listening on ${address}`);
+});
+```
+
+5. We run our application by running : `docker-compose up -d`.
+
+6. We run `docker-compose ps` to see if our services are health and running. 
 
 ## Celebrate your achievement 🥳 
 And there you have it a fully operational CRUD web-application with fastify communicating with a postgres database 🥳🙌🎉 
