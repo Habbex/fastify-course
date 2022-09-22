@@ -10,7 +10,7 @@ services:
       - ./package.json:/usr/src/web-app/package.json
       - ./package-lock.json:/usr/src/web-app/package-lock.json
 
-  web-app:
+  web-app-fastiy:
     container_name: web-app
     image: node:14.16.0
     working_dir: /usr/src/web-app

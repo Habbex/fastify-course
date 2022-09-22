@@ -1,0 +1,21 @@
+{
+  "name": "first-app",
+  "version": "1.0.0",
+  "description": "first-app",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev" : "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node.js",
+    "learning"
+  ],
+  "author": "EOK",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "nodemon": "^2.0.16"
+  }
+}

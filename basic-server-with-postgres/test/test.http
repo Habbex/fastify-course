@@ -33,7 +33,7 @@ GET http://127.0.0.1:8080/v2/ HTTP/1.1
 GET http://127.0.0.1:3000/v2/9 HTTP/1.1 
 
 ### ADD ITEM
-POST http://localhost:8080/v2 HTTP/1.1
+POST http://localhost:3000/v2 HTTP/1.1
 Content-Type: application/json
 
 {
@@ -51,6 +51,7 @@ Content-Type: application/json
 
 {
   "name": "Updated Item 3",
-  "description": "Updated Item Description 3"
+  "description": "Updated Item Description 3",
+  "gross_amount": 20
 }
 

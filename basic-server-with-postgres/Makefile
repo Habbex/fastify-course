@@ -8,7 +8,7 @@ count?=1
 
 start:
 	@echo "Running services"
-	@docker-compose up 
+	@docker-compose up -d
 
 stop:
 	@echo "stopping services"

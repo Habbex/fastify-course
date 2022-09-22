@@ -821,5 +821,37 @@ app.listen(env.WEB_APP_HOST_PORT , '0.0.0.0', async (err, address) => {
 
 6. We run `docker-compose ps` to see if our services are health and running. 
 
+
+## Make file 
+We can use a Makefile to bundle and document our commands so they are understanable and easy to use :
+```
+# Local Variables
+# ===============
+#
+pg_name?=postgres
+pg_db?=postgres
+pg_user?=postgres
+count?=1
+
+start:
+	@echo "Running services"
+	@docker-compose up -d
+
+stop:
+	@echo "stopping services"
+	@docker-compose down
+
+logs:
+	@echo ""
+	@echo "Attaching to the log's stream...."
+	@docker-compose logs -f
+
+psql:
+	@echo "Connecting to the database ("quit" to exit) ..."
+	@docker exec -it $(pg_name) psql -U $(pg_user)
+```
+
+You can install Makefile : `sudo apt install make` for WSL2.
+
 ## Celebrate your achievement 🥳 
 And there you have it a fully operational CRUD web-application with fastify communicating with a postgres database 🥳🙌🎉 
