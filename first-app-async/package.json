@@ -1,0 +1,24 @@
+{
+  "name": "bootcamp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemonHa/bootcamp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DemonHa/bootcamp/issues"
+  },
+  "homepage": "https://github.com/DemonHa/bootcamp#readme",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "nodemon": "^2.0.16"
+  }
+}
