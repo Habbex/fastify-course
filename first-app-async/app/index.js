@@ -13,6 +13,7 @@ function readJsonFile(path) {
     const data = fs.readFileSync(path, { encoding: "utf8" });
     return JSON.parse(data);
   } catch (err) {
+    console.error("Somethig went wrong while reading the file in sync");
     return [];
   }
 }
@@ -31,7 +32,7 @@ async function readJsonFileAsync(path) {
     });
     return JSON.parse(data);
   } catch (err) {
-    console.error("Somethig went wrong while reading the file");
+    console.error("Somethig went wrong while reading the file in async");
     return [];
   }
 }
