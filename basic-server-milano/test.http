@@ -1,0 +1,75 @@
+@hostname = localhost
+@port = {{$dotenv WEB_APP_HOST_PORT}}
+@host = {{hostname}}:{{port}}
+@v1 = v1
+@v2 = v2
+@contentType = application/json
+
+
+### V1 routes
+### GET 
+
+GET http://{{host}}/{{v1}} HTTP/1.1
+
+### GET by Id 
+
+GET http://{{host}}/{{v1}}/1 HTTP/1.1
+
+### POST 
+
+POST http://{{host}}/{{v1}} HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "name": "New Item",
+    "description": "New item desc"
+}
+
+### Delete by Id 
+
+DELETE http://{{host}}/{{v1}}/1 HTTP/1.1
+
+
+### Update 
+
+PUT http://{{host}}/{{v1}}/2 HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "name": "Updated Item",
+    "description": "Updated item desc"
+}
+
+
+### V2 Routes
+### GET time // test db connection
+
+GET http://{{host}}/{{v2}}/time HTTP/1.1
+
+### Get all items from Db 
+GET http://{{host}}/{{v2}} HTTP/1.1
+
+### Get item with id 1
+GET http://{{host}}/{{v2}}/1 HTTP/1.1
+
+### POST 
+POST http://{{host}}/{{v2}} HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "name": "New Item",
+    "description": "New item desc"
+}
+
+### Update Item with id 2
+PUT http://{{host}}/{{v2}}/2 HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "name": "Updated Item",
+    "description": "Updated item desc"
+}
+
+
+### Delete item with id 1
+DELETE http://{{host}}/{{v2}}/1 HTTP/1.1

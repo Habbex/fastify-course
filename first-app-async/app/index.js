@@ -39,7 +39,7 @@ async function readJsonFileAsync(path) {
 
 async function delayedConsoleLog(){
   await setTimeout(5000)
-  console.warn("[INFO]I waited five seconds for this!")
+  console.warn("[INFO] I waited five seconds for this!")
 }
 
 module.exports = {

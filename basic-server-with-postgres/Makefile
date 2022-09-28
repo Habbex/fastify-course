@@ -6,9 +6,10 @@ pg_db?=postgres
 pg_user?=postgres
 count?=1
 
+
 start:
 	@echo "Running services"
-	@docker-compose up -d
+	@docker-compose up
 
 stop:
 	@echo "stopping services"
@@ -23,4 +24,5 @@ psql:
 	@echo "Connecting to the database ("quit" to exit) ..."
 	@docker exec -it $(pg_name) psql -U $(pg_user)
 
-
+reset:
+	@docker exec -i $(pg_name) psql -U postgres < ./seeds/reset-test-db.sql

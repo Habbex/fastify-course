@@ -2,7 +2,7 @@ const setupTestEnv = require("./setupTestEnv");
 
 const app = setupTestEnv();
 
-describe("Intgretation test for CRUD endpoints connected to test db", () => {
+describe("Integration test for CRUD endpoints connected to test db", () => {
 
     test('should create an item via POST route', async () => {
         const item = {
@@ -10,7 +10,7 @@ describe("Intgretation test for CRUD endpoints connected to test db", () => {
             description: "This is a test item",
             gross_amount: 20,   
         };
-        
+
         const response = await app.inject({
             method: "POST",
             url: "/v2/",
