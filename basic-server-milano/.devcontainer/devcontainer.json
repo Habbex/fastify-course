@@ -1,0 +1,15 @@
+{
+    "name": "Basic-server-Milano",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "web-app-fastiy",
+    "workspaceFolder": "/usr/src/web-app",
+    "forwardPorts": [8080, 5432, 8081],
+    "extensions": [
+      "dbaeumer.vscode-eslint"
+    ],
+    "settings": { 
+      "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "postCreateCommand": "npm install",
+    "remoteUser": "node"
+  }
