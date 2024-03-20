@@ -27,6 +27,7 @@ function readJsonFile(path) {
  */
 async function readJsonFileAsync(path) {
   try {
+    await setTimeout(2000)// Simulate a 2-second delay
     const data = await fsPromises.readFile(path, {
       encoding: "utf8",
     });
@@ -39,7 +40,7 @@ async function readJsonFileAsync(path) {
 
 async function delayedConsoleLog(){
   await setTimeout(5000)
-  console.warn("[INFO] I waited five seconds for this!")
+  console.warn("I waited five seconds for this!")
 }
 
 module.exports = {

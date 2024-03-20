@@ -1,28 +1,32 @@
-# Local Variables
-# ===============
+# Local varaibles 
+#================
 #
+
 pg_name?=postgres
 pg_db?=postgres
 pg_user?=postgres
-count?=1
 
 
-start:
+start: 
 	@echo "Running services"
-	@docker-compose up
+	@docker-compose up -d
 
 stop:
-	@echo "stopping services"
+	@echo "Stopping services"
 	@docker-compose down
 
-logs:
+restart: stop start
+
+logs: 
 	@echo ""
-	@echo "Attaching to the log's stream...."
+	@echo "Attaching to log stream..."
 	@docker-compose logs -f
 
-psql:
-	@echo "Connecting to the database ("quit" to exit) ..."
+logs-web: 
+	@echo ""
+	@echo "Attaching to log stream..."
+	@docker-compose logs -f web-app-fastiy
+	
+psql: 
+	@echo "Connecting to the database (type "quit to exit") ..."
 	@docker exec -it $(pg_name) psql -U $(pg_user)
-
-reset:
-	@docker exec -i $(pg_name) psql -U postgres < ./seeds/reset-test-db.sql

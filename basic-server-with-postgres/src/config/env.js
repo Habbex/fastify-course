@@ -1,8 +1,9 @@
-require('dotenv').config();
-const envalid = require('envalid');
+require('dotenv').config
 
-module.exports= envalid.cleanEnv(process.env, {
-    POSTGRES_DB_CONNECTION_STRING: envalid.str({}),
-    POSTGRES_TEMP_DB_CONNECTION_STRING: envalid.str({}),
-    WEB_APP_HOST_PORT: envalid.num({ default: 8080 }),
+const envaild = require('envalid')
+
+module.exports = envaild.cleanEnv(process.env, {
+    POSTGRES_DB_CONNECTION_STRING : envaild.str({}),
+    POSTGRES_TEMP_DB_CONNECTION_STRING : envaild.str({}),
+    WEB_APP_HOST_PORT : envaild.num({default: 8080})
 })

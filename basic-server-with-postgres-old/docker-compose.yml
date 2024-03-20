@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   setup-web-app:
-    image: node:16.17.0
+    image: node:14.16.0
     working_dir: /usr/src/web-app
     entrypoint: [ 'npm', 'i' ]
     volumes:
@@ -12,9 +12,9 @@ services:
 
   web-app-fastiy:
     container_name: web-app
-    image: node:16.17.0
+    image: node:14.16.0
     working_dir: /usr/src/web-app
-    entrypoint: [ 'npm', 'run', 'start' ]
+    entrypoint: [ 'npm', 'run', 'test:watch' ]
     ports:
       - '${WEB_APP_HOST_PORT:-8080}:8080'
     volumes:
