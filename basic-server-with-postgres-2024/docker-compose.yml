@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # setup-web-app:
+  #   image: node:16.17.0
+  #   working_dir: /usr/src/web-app
+  #   entrypoint: [ 'npm', 'i' ]
+  #   volumes:
+  #     - ./docker-data/node_modules:/usr/src/web-app/node_modules
+  #     - ./package.json:/usr/src/web-app/package.json
+  #     - ./package-lock.json:/usr/src/web-app/package-lock.json
+
+  # web-app-fastiy:
+  #   container_name: web-app
+  #   image: node:16.17.0
+  #   working_dir: /usr/src/web-app
+  #   entrypoint: [ 'npm', 'run', 'start' ]
+  #   ports:
+  #     - '${WEB_APP_HOST_PORT:-8080}:8080'
+  #   volumes:
+  #     - ./docker-data/node_modules:/usr/src/web-app/node_modules
+  #     - ./package.json:/usr/src/web-app/package.json
+  #     - ./package-lock.json:/usr/src/web-app/package-lock.json
+  #     - .:/usr/src/web-app
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     POSTGRES_DB_CONNECTION_STRING: '${POSTGRES_DB_CONNECTION_STRING}'
+  #     POSTGRES_TEMP_DB_CONNECTION_STRING: '${POSTGRES_TEMP_DB_CONNECTION_STRING}'
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test:
+  #       [
+  #         'CMD',
+  #         'wget',
+  #         '-qO',
+  #         '-',
+  #         'http://localhost:8080/healthcheck'
+  #       ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 20
+
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql # Mount the modified SQL script
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+  adminer:
+    container_name: adminer
+    image: adminer:4.8.1
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${ADMINER_HOST_PORT:-8081}:8080'
+volumes:
+  pgdata:

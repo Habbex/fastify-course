@@ -1,0 +1,46 @@
+@hostname = localhost
+@port = 3000
+@host = {{hostname}}:{{port}}
+@books = books
+@contentType = application/json
+
+
+### Books Routes
+
+### Get all books from Db paginated by 10. 
+GET http://{{host}}/{{books}} HTTP/1.1
+
+### Get all books from Db where author is Homer, asceding and page 1
+GET http://{{host}}/{{books}}?author=Homer&sort=ASC&page=1 HTTP/1.1
+
+### Get all books from Db where published_year is 1925, desceding
+GET http://{{host}}/{{books}}?published_year=1925&sort=DESC HTTP/1.1
+
+### Get book with id 1
+GET http://{{host}}/{{books}}/1 HTTP/1.1
+
+### POST 
+POST http://{{host}}/{{books}} HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "title": "The unGreat Gatsby ",
+    "author": "F. Scott Fitzgerald",
+    "isbn": "9780743273565",
+    "published_year": 1925
+}
+
+### Update Item with id 2
+PUT http://{{host}}/{{books}}/26 HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "title": "Don Quixote 3",
+    "author": "Miguel de Cervantes 3",
+    "isbn": "9780060934348",
+    "published_year": 1604
+}
+
+
+### Delete item with id 1
+DELETE http://{{host}}/{{books}}/26 HTTP/1.1
