@@ -1,5 +1,5 @@
 const dbCheck = async (fastify, options) => {
-    fastify.get('/dbcheck', async (request, reply) => {
+    fastify.get('/', async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
             const { rows } = await fastify.pg.query('SELECT now()')

@@ -1,13 +1,13 @@
-const { getBooksOpts } = require("../../schemas/v1/books")
+const { getBooksOpts, postBookOpts, getBookOpts, putBookOpts } = require("../../schemas/v1/books")
 
 
 const booksRoute = async (fastify) => {
-    fastify.get('/books', getBooksOpts, async (request, reply) => {
+    fastify.get('/', getBooksOpts, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
-            const {author, published_year, sort="DESC", page= 1 }= request.query
+            const { author, published_year, sort = "DESC", page = 1 } = request.query
             const limit = 10
-            const offset= (page - 1 ) * limit
+            const offset = (page - 1) * limit
 
             let query = "SELECT * FROM books WHERE 1=1"
 
@@ -39,13 +39,17 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.get('/books/:id', async (request, reply) => {
+    fastify.get('/:id', getBookOpts, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
             const { id } = request.params
             const { rows } = await client.query("SELECT * FROM books where id=$1", [id])
             if (rows.length === 0) {
-                reply.status(404).send({ error: "Book not found" })
+                reply.status(404).send({ 
+                    statusCode: 404, 
+                    error: "Not Found", 
+                    message: "The book you are looking for does not exist" 
+                })
             } else {
                 reply.send(rows[0])
             }
@@ -58,7 +62,7 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.post('/books', async (request, reply) => {
+    fastify.post('/', postBookOpts, async (request, reply) => {
         const client = await fastify.pg.connect();
         try {
             const { title, author, isbn, published_year } = request.body
@@ -75,7 +79,7 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.put('/books/:id', async (request, reply) => {
+    fastify.put('/:id', putBookOpts, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
             const { id } = request.params
@@ -84,27 +88,36 @@ const booksRoute = async (fastify) => {
                 "UPDATE books SET title=$1, author=$2, isbn=$3, published_year=$4 WHERE id=$5 RETURNING *",
                 [title, author, isbn, published_year, id]
             )
-            reply.code(201).send(rows[0])
+            if (rows.length === 0) {
+                reply.status(404).send({ 
+                    statusCode: 404, 
+                    error: "Not Found", 
+                    message: "The book you are looking for does not exist" 
+                })
+            } else {
+                reply.code(201).send(rows[0])
+            }
+
         } catch (error) {
             console.error("Error updating the book", error)
             reply.status(500).send({ error: "Internal Server Error" })
         }
-        finally{
+        finally {
             client.release()
         }
     })
 
-    fastify.delete('/books/:id', async (request, reply) => {
-        const client= await fastify.pg.connect()
+    fastify.delete('/:id', async (request, reply) => {
+        const client = await fastify.pg.connect()
         try {
-            const {id} = request.params
+            const { id } = request.params
             await client.query("DELETE FROM books WHERE id=$1", [id])
             reply.send(`Books with ${id} has been deleted`)
         } catch (error) {
             console.error("Error deleting the book", error)
             reply.status(500).send({ error: "Internal Server Error" })
         }
-        finally{
+        finally {
             client.release()
         }
     })

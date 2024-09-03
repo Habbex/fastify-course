@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/postgres": "^5.2.2",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^4.1.0",
     "fastify": "^4.28.1",
     "pg": "^8.12.0"
   },
