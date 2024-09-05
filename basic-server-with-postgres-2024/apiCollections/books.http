@@ -4,35 +4,38 @@
 @version1= v1
 @books = books
 @contentType = application/json
+@token= eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzI1NTMwNzUwfQ.KolDTH-zTOa5H4AvpRhLEZrRKvqap63OV594UXsVEBg
 
 
 ### Books Routes
 
 ### Get all books from Db paginated by 10. 
 GET http://{{host}}/{{version1}}/{{books}} HTTP/1.1
-
+Authorization: Bearer {{token}}
 ### Get all books from Db where author is Homer, asceding and page 1
 GET http://{{host}}/{{version1}}/{{books}}?author=Homer&sort=ASC&page=1 HTTP/1.1
-
+Authorization: Bearer {{token}}
 ### Get all books from Db where published_year is 1925, desceding
 GET http://{{host}}/{{version1}}/{{books}}?published_year=1925&sort=DESC HTTP/1.1
-
+Authorization: Bearer {{token}}
 ### Get book with id 1
-GET http://{{host}}/{{version1}}/{{books}}/29 HTTP/1.1
-
+GET http://{{host}}/{{version1}}/{{books}}/26 HTTP/1.1
+Authorization: Bearer {{token}}
 ### POST 
 POST http://{{host}}/{{version1}}/{{books}} HTTP/1.1
+Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
     "title": "Don Quixote 2, Revenge of the windmills",
     "author": "Miguel de Cervantes",
     "isbn": "9780060934348",
-    "published_year": 1606
+    "published_year": -2100
 }
 
 ### Update Item with id 2
-PUT http://{{host}}/{{version1}}/{{books}}/29 HTTP/1.1
+PUT http://{{host}}/{{version1}}/{{books}}/26 HTTP/1.1
+Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
@@ -45,3 +48,4 @@ Content-Type: {{contentType}}
 
 ### Delete item with id 1
 DELETE http://{{host}}/{{version1}}/{{books}}/29 HTTP/1.1
+Authorization: Bearer {{token}}

@@ -13,8 +13,26 @@ BEGIN
 END
 $$;
 
+-- Create test db for integration testing called library-test
+DO
+$$
+BEGIN
+   IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'library_test') THEN
+      PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE library_test');
+   END IF;
+END
+$$;
+
 -- Connect to the 'library' database
 \c library;
+
+-- Check if the 'users' table exists, create it if it does not
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL
+);
 
 -- Check if the 'books' table exists, create it if it does not
 CREATE TABLE IF NOT EXISTS books (

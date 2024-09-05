@@ -1,7 +1,25 @@
-const { getBooksOpts, postBookOpts, getBookOpts, putBookOpts } = require("../../schemas/v1/books")
 
+const { getBooksOpts, postBookOpts, getBookOpts, putBookOpts, deleteBookOpts } = require("../../schemas/v1/books")
+const validateIsbn = require("../../validations/ibsn")
 
 const booksRoute = async (fastify) => {
+
+    fastify.addHook("preHandler", async (request, reply) => {
+        try {
+            await request.jwtVerify()
+        } catch (error) {
+            reply.code(401).send({ error: "Unauthorized" })
+        }
+    })
+
+    const isAdmin = (request, reply, done)=>{
+        const user= request.user
+        if (user.role !== "admin") {
+            return reply.code(403).send({error: "Forbidden"})
+        }
+        done()
+    }
+
     fastify.get('/', getBooksOpts, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
@@ -45,10 +63,10 @@ const booksRoute = async (fastify) => {
             const { id } = request.params
             const { rows } = await client.query("SELECT * FROM books where id=$1", [id])
             if (rows.length === 0) {
-                reply.status(404).send({ 
-                    statusCode: 404, 
-                    error: "Not Found", 
-                    message: "The book you are looking for does not exist" 
+                reply.status(404).send({
+                    statusCode: 404,
+                    error: "Not Found",
+                    message: "The book you are looking for does not exist"
                 })
             } else {
                 reply.send(rows[0])
@@ -62,13 +80,19 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.post('/', postBookOpts, async (request, reply) => {
+    fastify.post('/', {preHandler: [isAdmin], schema:postBookOpts}, async (request, reply) => {
         const client = await fastify.pg.connect();
         try {
             const { title, author, isbn, published_year } = request.body
+
+            if (!validateIsbn(isbn)) {
+                reply.code(400).send({ error: "ISBN should either be 10 or 13 digits long" })
+            }
+
             const { rows } = await fastify.pg.query("INSERT INTO books (title, author, isbn, published_year) VALUES ($1, $2, $3, $4) RETURNING *",
                 [title, author, isbn, published_year]
             )
+
             reply.code(201).send(rows[0])
         } catch (error) {
             console.error("Error creating the book", error)
@@ -79,23 +103,29 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.put('/:id', putBookOpts, async (request, reply) => {
+    fastify.put('/:id', {preHandler: [isAdmin], schema:putBookOpts}, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
             const { id } = request.params
             const { title, author, isbn, published_year } = request.body
+
+            if (!validateIsbn(isbn)) {
+                reply.code(400).send({ error: "ISBN should either be 10 or 13 digits long" })
+            }
+
             const { rows } = await fastify.pg.query(
                 "UPDATE books SET title=$1, author=$2, isbn=$3, published_year=$4 WHERE id=$5 RETURNING *",
                 [title, author, isbn, published_year, id]
             )
+
             if (rows.length === 0) {
-                reply.status(404).send({ 
-                    statusCode: 404, 
-                    error: "Not Found", 
-                    message: "The book you are looking for does not exist" 
+                reply.status(404).send({
+                    statusCode: 404,
+                    error: "Not Found",
+                    message: "The book you are looking for does not exist"
                 })
             } else {
-                reply.code(201).send(rows[0])
+                reply.code(200).send(rows[0])
             }
 
         } catch (error) {
@@ -107,12 +137,21 @@ const booksRoute = async (fastify) => {
         }
     })
 
-    fastify.delete('/:id', async (request, reply) => {
+    fastify.delete('/:id',{preHandler: [isAdmin], schema: deleteBookOpts}, async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
             const { id } = request.params
-            await client.query("DELETE FROM books WHERE id=$1", [id])
-            reply.send(`Books with ${id} has been deleted`)
+            const { rows } = await client.query("SELECT * FROM books where id=$1", [id])
+            if (rows.length === 0) {
+                reply.status(404).send({
+                    statusCode: 404,
+                    error: "Not Found",
+                    message: "The book you are looking for does not exist"
+                })
+            } else {
+                await client.query("DELETE FROM books WHERE id=$1", [id])
+                reply.code(200).send(`Books with ${id} has been deleted`)
+            }
         } catch (error) {
             console.error("Error deleting the book", error)
             reply.status(500).send({ error: "Internal Server Error" })

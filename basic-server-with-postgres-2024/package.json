@@ -4,20 +4,26 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/server",
-    "dev": "nodemon src/server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index",
+    "dev": "nodemon src/index",
+    "test": "jest --coverage --runInBand",
+    "test:watch": "jest --watch"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/jwt": "^5.0.0",
     "@fastify/postgres": "^5.2.2",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
     "fastify": "^4.28.1",
+    "fastify-bcrypt": "^1.0.1",
     "pg": "^8.12.0"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.4"
   }
 }
