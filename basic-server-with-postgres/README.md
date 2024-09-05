@@ -5,7 +5,7 @@ This readme will explain how to update our current basic we-application to commu
 
 
 ## Install pg and fastify-postgres plugin
-1. `npm i pg @fastify/postgres --save`
+1. `npm i pg @fastify/postgres --save-dev`
 2. inspect the `package.json` file 
 3. register the plugin in the `app.js` file:
 ```
