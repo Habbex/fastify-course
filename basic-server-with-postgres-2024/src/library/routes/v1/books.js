@@ -2,8 +2,13 @@
 const { getBooksOpts, postBookOpts, getBookOpts, putBookOpts, deleteBookOpts } = require("../../schemas/v1/books")
 const validateIsbn = require("../../validations/ibsn")
 
+/**
+ * Defines the routes for books in the application.
+ *
+ * @param {FastifyInstance} fastify - The Fastify instance.
+ * @returns {Promise<void>}
+ */
 const booksRoute = async (fastify) => {
-
     fastify.addHook("preHandler", async (request, reply) => {
         try {
             await request.jwtVerify()
