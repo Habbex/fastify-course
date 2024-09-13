@@ -15,7 +15,7 @@ const app = build_web_app(
             },
             servers: [
                 {
-                    url: env.WEB_APP_HOST,
+                    url: `${env.WEB_APP_HOST}:${env.WEB_APP_HOST_PORT}`,
                     description: 'Development server'
                 }
             ],

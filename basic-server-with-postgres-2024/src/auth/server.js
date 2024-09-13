@@ -15,7 +15,7 @@ const auth_app = build_auth_app(
             },
             servers: [
                 {
-                    url: env.AUTH_APP_HOST,
+                    url: `${env.AUTH_APP_HOST}:${env.AUTH_APP_HOST_PORT}`,
                     description: 'Development server'
                 }
             ]

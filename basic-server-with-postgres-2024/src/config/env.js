@@ -8,7 +8,7 @@ module.exports = envaild.cleanEnv(process.env, {
     JWT_SECRET: envaild.str({}),
     TEST_TOKEN: envaild.str({}),
     WEB_APP_HOST_PORT: envaild.num({default:8080}),
-    WEB_APP_HOST: envaild.str({default: "localhost"}),
+    WEB_APP_HOST: envaild.str({default: "http://127.0.0.1"}),
     AUTH_APP_HOST_PORT: envaild.num({default:8081}),
-    AUTH_APP_HOST: envaild.str({default: "localhost"})
+    AUTH_APP_HOST: envaild.str({default: "http://127.0.0.1"})
 })
