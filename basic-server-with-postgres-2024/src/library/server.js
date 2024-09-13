@@ -15,17 +15,17 @@ const app = build_web_app(
             },
             servers: [
                 {
-                    url: 'http://localhost:3000',
+                    url: env.WEB_APP_HOST,
                     description: 'Development server'
                 }
             ],
             components: {
                 securitySchemes: {
                     bearerAuth: {
-                        type: 'apiKey',
-                        name: 'Authorization',
-                        in: 'header',
-                        description: 'Enter the token with the `Bearer ` prefix before the actual token'
+                        type: 'http',
+                        scheme: "bearer",
+                        bearerFormat: "JWT" , 
+                        description: 'Enter the JWT token from sign-in API'
                     }
                 }
             },

@@ -1,18 +1,18 @@
 {
-  "name": "fastify-course",
+  "name": "fastify-web-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Repo containing a simple node.js with Fastify",
   "main": "index.js",
   "scripts": {
     "start": "node src/index",
     "dev": "nodemon src/index",
     "test": "jest --coverage --runInBand",
-    "test:watch": "jest --runInBand --watch"
+    "test:watch": "jest --watch --runInBand"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fastify/jwt": "^5.0.0",
+    "@fastify/jwt": "^8.0.1",
     "@fastify/postgres": "^5.2.2",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",

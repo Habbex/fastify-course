@@ -1,4 +1,4 @@
-const dbCheck = async (fastify, options) => {
+const dbCheck = async (fastify) => {
     fastify.get('/', async (request, reply) => {
         const client = await fastify.pg.connect()
         try {
@@ -12,4 +12,4 @@ const dbCheck = async (fastify, options) => {
         }
     })
 }
-module.exports = { dbCheck }
+module.exports =  dbCheck 

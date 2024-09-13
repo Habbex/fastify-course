@@ -4,7 +4,7 @@ const fastifySwagger= require('@fastify/swagger')
 const fastifySwaggerUI= require('@fastify/swagger-ui')
 const fastifyJwt= require('@fastify/jwt')
 const fastifyBcrypt= require('fastify-bcrypt')
-const { dbCheck } = require('./routes/v1/dbCheck')
+const dbCheck = require('./routes/v1/dbCheck')
 const booksRoute = require('./routes/v1/books')
 
  

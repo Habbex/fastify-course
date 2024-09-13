@@ -15,7 +15,7 @@ const auth_app = build_auth_app(
             },
             servers: [
                 {
-                    url: 'http://localhost:3001',
+                    url: env.AUTH_APP_HOST,
                     description: 'Development server'
                 }
             ]

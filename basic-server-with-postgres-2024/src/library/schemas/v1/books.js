@@ -6,7 +6,6 @@ const book = {
         author: { type: 'string' },
         isbn: { type: 'string' },
         published_year: { type: 'number' }
-
     }
 }
 
@@ -26,32 +25,38 @@ const bookNotFoundResponse = {
 
 const getBookOpts = {
     schema: {
+        params: { // Defining the route parameter as integer
+            type: 'object',
+            properties: {
+              id: { type: 'integer' }, // id must be an integer
+            },
+            required: ['id'], // 'id' is required in the URL path
+          },
         security: [{ bearerAuth: [] }], // Adding JWT security for this route
+        response: {
+            200: book,
+            404: bookNotFoundResponse
+        }
     },
-    response: {
-        200: book,
-        404: bookNotFoundResponse
-    }
+    
 }
-
 
 const getBooksOpts = {
     schema: {
         security: [{ bearerAuth: [] }], // Adding JWT security for this route
         query: {
             author: { type: 'string' },
-            published_year: { type: 'number' },
+            published_year: { type: 'number', minimum: -2100, maximum: new Date().getFullYear() },
             sort: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' },
             page: { type: 'number', minimum: 1, default: 1 }
         },
-        additionalProperties: false
-    },
-    response: {
-        200: {
-            type: 'array',
-            items: book
+        response: {
+            200: {
+                type: 'array',
+                items: book
+            }
         }
-    }
+    },  
 }
 
 const postBookOpts = {
@@ -72,6 +77,13 @@ const postBookOpts = {
 }
 
 const putBookOpts = {
+    params: { // Defining the route parameter as integer
+        type: 'object',
+        properties: {
+          id: { type: 'integer' }, // id must be an integer
+        },
+        required: ['id'], // 'id' is required in the URL path
+      },
     security: [{ bearerAuth: [] }], // Adding JWT security for this route
     body: {
         type: 'object',

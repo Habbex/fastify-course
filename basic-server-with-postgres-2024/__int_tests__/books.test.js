@@ -59,6 +59,28 @@ describe("Intgretation test for books CRUD API", () => {
         expect(response.statusCode).toBe(200);
         expect(response.json()).toMatchObject(updatedBook);
     })
+
+    test("should fail when id is a string", async()=>{
+       
+        const getResponse= await testApp.inject({
+            method: "GET",
+            url: "/v1/books/" + "bob",
+            headers: {"authorization": testToken},
+        })
+
+        expect(getResponse.statusCode).toBe(400);
+    })
+
+    test("should return 404 when not found", async()=>{
+       
+        const getResponse= await testApp.inject({
+            method: "GET",
+            url: "/v1/books/" + 50,
+            headers: {"authorization": testToken},
+        })
+
+        expect(getResponse.statusCode).toBe(404);
+    })
     
     test("should get newly created book via GET route", async()=>{
         const testBook= {

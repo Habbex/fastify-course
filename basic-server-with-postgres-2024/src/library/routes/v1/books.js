@@ -2,12 +2,6 @@
 const { getBooksOpts, postBookOpts, getBookOpts, putBookOpts, deleteBookOpts } = require("../../schemas/v1/books")
 const validateIsbn = require("../../validations/ibsn")
 
-/**
- * Defines the routes for books in the application.
- *
- * @param {FastifyInstance} fastify - The Fastify instance.
- * @returns {Promise<void>}
- */
 const booksRoute = async (fastify) => {
     fastify.addHook("preHandler", async (request, reply) => {
         try {
@@ -94,7 +88,7 @@ const booksRoute = async (fastify) => {
                 reply.code(400).send({ error: "ISBN should either be 10 or 13 digits long" })
             }
 
-            const { rows } = await fastify.pg.query("INSERT INTO books (title, author, isbn, published_year) VALUES ($1, $2, $3, $4) RETURNING *",
+            const { rows } = await client.query("INSERT INTO books (title, author, isbn, published_year) VALUES ($1, $2, $3, $4) RETURNING *",
                 [title, author, isbn, published_year]
             )
 
@@ -118,7 +112,7 @@ const booksRoute = async (fastify) => {
                 reply.code(400).send({ error: "ISBN should either be 10 or 13 digits long" })
             }
 
-            const { rows } = await fastify.pg.query(
+            const { rows } = await client.query(
                 "UPDATE books SET title=$1, author=$2, isbn=$3, published_year=$4 WHERE id=$5 RETURNING *",
                 [title, author, isbn, published_year, id]
             )
